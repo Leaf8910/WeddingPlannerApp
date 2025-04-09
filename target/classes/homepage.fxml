@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefHeight="600" prefWidth="800" stylesheets="" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.HomePageController">
+    <HBox alignment="CENTER" prefHeight="100.0" prefWidth="760.0" spacing="10.0">
+        <children>
+            <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+            <Button alignment="CENTER" contentDisplay="TOP" mnemonicParsing="false" prefHeight="26.0" prefWidth="78.0" text="Home" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="78.0" text="Planning" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="72.0" text="Checklist" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="70.0" text="Itinerary" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="63.0" text="History" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="63.0" text="Logout" />
+        </children>
+    </HBox>
+
+    <!-- Main Content -->
+    <VBox alignment="CENTER" prefHeight="217.0" prefWidth="800.0" spacing="20" styleClass="main-content">
+        <!-- Couple Icons -->
+        <HBox alignment="CENTER" spacing="50">
+            <VBox alignment="CENTER" spacing="10">
+                <ImageView fx:id="groomIcon" fitHeight="150" fitWidth="151.0" styleClass="profile-icon">
+                    <image>
+                        <!--                        <Image url="/icons/icon-placeholder.png"/>-->
+                    </image>
+                </ImageView>
+                <TextField fx:id="groomName" promptText="Name of Groom" />
+            </VBox>
+
+            <VBox alignment="CENTER" spacing="10">
+                <ImageView fitHeight="150.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="true" />
+                <TextField fx:id="brideName" promptText="Name of Bride" />
+            </VBox>
+        </HBox>
+
+        <!-- Wedding Date -->
+        <HBox alignment="CENTER" spacing="10">
+            <Label text="Wedding Date:" />
+            <DatePicker fx:id="weddingDateFrom" />
+            <Label text="to" />
+            <DatePicker fx:id="weddingDateTo" />
+        </HBox>
+
+        <!-- Attendants -->
+        <HBox alignment="CENTER" spacing="10">
+            <Label text="Attendants:" />
+            <TextField fx:id="attendantsCount" prefWidth="100" text="100 pax" />
+        </HBox>
+
+        <!-- Budget Selection -->
+        <HBox alignment="CENTER" spacing="10">
+            <Label text="Choose your preferred budget:" />
+            <ComboBox fx:id="budgetSelector" prefWidth="200" promptText="Select Budget"/>
+            <!-- <items>
+                   <FXCollections fx:factory="budgetArrayList">
+                    <String fx:value="10000"/>
+                    <String fx:value="20000"/>
+                    <String fx:value="30000"/>
+                </FXCollections>
+            </items>
+        </ComboBox> -->
+        </HBox>
+
+        <!-- Confirm Button -->
+        <Button styleClass="confirm-button" fx:id="confirmButton" text="Confirm" />
+    </VBox>
+</VBox>
