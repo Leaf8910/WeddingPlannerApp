@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.LoginController">
+    <center>
+        <StackPane BorderPane.alignment="CENTER">
+            <children>
+                <!-- Login Form -->
+                <VBox fx:id="loginBox" alignment="CENTER" spacing="15.0" style="-fx-background-color: white;">
+                    <padding>
+                        <Insets bottom="30.0" left="50.0" right="50.0" top="30.0" />
+                    </padding>
+                    <children>
+                        <Label text="Wedding Planner Login" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="24.0" />
+                            </font>
+                        </Label>
+                        <Separator prefWidth="200.0" />
+                        <TextField fx:id="loginUsername" promptText="Username" />
+                        <PasswordField fx:id="loginPassword" promptText="Password" />
+                        <Button fx:id="loginButton" defaultButton="true" mnemonicParsing="false" onAction="#handleLogin" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #4CAF50;" text="Login" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Label text="Don't have an account?" />
+                        <Hyperlink onAction="#showRegisterForm" text="Register now" />
+                        <Label fx:id="loginMessageLabel" textFill="RED" />
+                    </children>
+                </VBox>
+
+                <!-- Register Form -->
+                <VBox fx:id="registerBox" alignment="CENTER" spacing="15.0" style="-fx-background-color: white;" visible="false">
+                    <padding>
+                        <Insets bottom="30.0" left="50.0" right="50.0" top="30.0" />
+                    </padding>
+                    <children>
+                        <Label text="Create an Account" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="24.0" />
+                            </font>
+                        </Label>
+                        <Separator prefWidth="200.0" />
+                        <TextField fx:id="registerEmail" promptText="Email" />
+                        <TextField fx:id="registerUsername" promptText="Username" />
+                        <PasswordField fx:id="registerPassword" promptText="Password" />
+                        <PasswordField fx:id="registerConfirmPassword" promptText="Confirm Password" />
+                        <Button fx:id="registerButton" defaultButton="true" mnemonicParsing="false" onAction="#handleRegister" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #2196F3;" text="Register" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Label text="Already have an account?" />
+                        <Hyperlink onAction="#showLoginForm" text="Login" />
+                        <Label fx:id="registerMessageLabel" textFill="RED" />
+                    </children>
+                </VBox>
+            </children>
+        </StackPane>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-background-color: #f8f9fa;" BorderPane.alignment="CENTER">
+<!--            <children>-->
+<!--                <Label text="DreamDay Wedding Planner © 2025" textFill="#757575">-->
+<!--                    <padding>-->
+<!--                        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />-->
+<!--                    </padding>-->
+<!--                </Label>-->
+<!--            </children>-->
+        </HBox>
+    </bottom>
+</BorderPane>
