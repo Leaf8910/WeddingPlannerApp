@@ -1,5 +1,4 @@
 package com;
-//package com.example.weddingplanner1;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -10,16 +9,11 @@ import javafx.stage.Stage;
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
-
-        // Load the FXML file with proper path
-        Parent root = FXMLLoader.load(getClass().getResource("/homepage.fxml"));
-        // Optional: Get the controller instance if needed
-//        HomePageController controller = loader.getController();
-//        // Load the FXML file
-//        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+        // Load the login FXML file instead of homepage
+        Parent root = FXMLLoader.load(getClass().getResource("/login.fxml"));
 
         // Set up the stage
-        primaryStage.setTitle("Wedding Planner");
+        primaryStage.setTitle("Wedding Planner - Login");
         primaryStage.setScene(new Scene(root, 800, 600));
         primaryStage.show();
     }
@@ -37,4 +31,3 @@ public class Main extends Application {
         launch(args);
     }
 }
-//BorderPane root = (BorderPane)FXMLLoader.load(getClass().getResource("homepage.fxml"));
