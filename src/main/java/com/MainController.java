@@ -43,6 +43,9 @@ public class MainController implements Initializable {
     private ImageView selectedImageView2;
 
     @FXML
+    private ImageView selectedImageView3;
+
+    @FXML
     private Menu checklistMenu;
 
     @FXML
@@ -50,6 +53,9 @@ public class MainController implements Initializable {
 
     @FXML
     private Button planninglistButton;
+
+    @FXML
+    private ComboBox<Product> setComboBox;
 
     @FXML
     private ComboBox<String> monthComboBox;
@@ -66,6 +72,7 @@ public class MainController implements Initializable {
     private final ObservableList<Product> products = FXCollections.observableArrayList();
     private final ObservableList<Product> halls = FXCollections.observableArrayList();
     private final ObservableList<Product> catering = FXCollections.observableArrayList();
+    private final ObservableList<Product> set = FXCollections.observableArrayList();
     private final ObservableList<String> months = FXCollections.observableArrayList(
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
@@ -87,6 +94,7 @@ public class MainController implements Initializable {
         loadProductsFromDatabase();
         loadHallsFromDatabase();
         loadCateringFromDatabase();
+        loadSetFromDatabase();
 
         // Set up product combo box
         setupComboBox(productComboBox, products);
@@ -96,6 +104,12 @@ public class MainController implements Initializable {
 
         // Set up catering combo box
         setupComboBox(cateringComboBox, catering);
+
+        setupComboBox(setComboBox, catering);
+
+        if (setComboBox != null) {
+            setupComboBox(setComboBox, set);
+        }
 
         // Set up month and day combo boxes if they exist
         if (monthComboBox != null) {
@@ -139,6 +153,17 @@ public class MainController implements Initializable {
             }
         });
 
+        // Add listener for catering selection change
+        setComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                selectedImageView3.setImage(newValue.getImage());
+                // Adjust the image size as needed
+                selectedImageView3.setFitWidth(200);
+                selectedImageView3.setFitHeight(200);
+                selectedImageView3.setPreserveRatio(true);
+            }
+        });
+
         // Select first items by default if available
         if (!products.isEmpty()) {
             productComboBox.getSelectionModel().selectFirst();
@@ -151,6 +176,8 @@ public class MainController implements Initializable {
         if (!catering.isEmpty()) {
             cateringComboBox.getSelectionModel().selectFirst();
         }
+
+
 
         // Set up confirm button handler
         if (confirmButton != null) {
@@ -185,6 +212,14 @@ public class MainController implements Initializable {
             for (Product cateringItem : catering) {
                 if (cateringItem.getName().equals(existingPlanning.getCatering())) {
                     cateringComboBox.getSelectionModel().select(cateringItem);
+                    break;
+                }
+            }
+
+            // Fix this part
+            for (Product setItem : set) {
+                if (setItem.getName().equals(existingPlanning.getSet())) {
+                    setComboBox.getSelectionModel().select(setItem);  // Select the Product object, not ID
                     break;
                 }
             }
@@ -242,6 +277,7 @@ public class MainController implements Initializable {
         if (productComboBox.getSelectionModel().isEmpty() ||
                 hallComboBox.getSelectionModel().isEmpty() ||
                 cateringComboBox.getSelectionModel().isEmpty() ||
+                setComboBox.getSelectionModel().isEmpty() ||
                 (monthComboBox != null && monthComboBox.getSelectionModel().isEmpty()) ||
                 (dayComboBox != null && dayComboBox.getSelectionModel().isEmpty())) {
 
@@ -263,11 +299,19 @@ public class MainController implements Initializable {
         }
 
         // Get selected items
+        // Correct data type handling
         String venue = productComboBox.getSelectionModel().getSelectedItem().getName();
         String hall = hallComboBox.getSelectionModel().getSelectedItem().getName();
         String cateringChoice = cateringComboBox.getSelectionModel().getSelectedItem().getName();
+        String setChoice = setComboBox.getSelectionModel().getSelectedItem().getName(); // Fixed variable name
         String month = monthComboBox != null ? monthComboBox.getValue() : "";
         String day = dayComboBox != null ? dayComboBox.getValue() : "";
+
+        String decor = hallComboBox.getSelectionModel().getSelectedItem().getName();
+        String MUA = hallComboBox.getSelectionModel().getSelectedItem().getName();
+        String wed_vendor = hallComboBox.getSelectionModel().getSelectedItem().getName();
+        String photographer = hallComboBox.getSelectionModel().getSelectedItem().getName();
+        String dress = hallComboBox.getSelectionModel().getSelectedItem().getName();
 
         // Create planning object
         Planning planning = new Planning(
@@ -275,8 +319,14 @@ public class MainController implements Initializable {
                 venue,
                 hall,
                 cateringChoice,
+                setChoice,
                 month,
-                day
+                day,
+                decor,
+                MUA,
+                wed_vendor,
+                photographer,
+                dress
         );
 
         // Save to database
@@ -523,6 +573,78 @@ public class MainController implements Initializable {
         if (catering.isEmpty()) {
             System.out.println("No catering options found in database. Adding default options.");
             addDefaultCatering();
+        }
+    }
+
+    private void loadSetFromDatabase() {
+        set.clear();
+
+        try {
+            // Connect to database
+            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                 Statement stmt = conn.createStatement()) {
+
+                String query = "SELECT id, name, image_path FROM products WHERE type = 'set'";
+                try (ResultSet rs = stmt.executeQuery(query)) {
+                    while (rs.next()) {
+                        int id = rs.getInt("id");
+                        String name = rs.getString("name");
+                        String imagePath = rs.getString("image_path");
+
+                        // Get input stream for image
+                        InputStream is = getClass().getResourceAsStream(imagePath);
+                        if (is == null) {
+                            System.err.println("Cannot find image: " + imagePath);
+                            is = getClass().getResourceAsStream("/images/default.png");
+                            if (is == null) {
+                                System.err.println("Cannot find default image either!");
+                                continue; // Skip this set option
+                            }
+                        }
+
+                        // Create image and product objects
+                        Image image = new Image(is);
+                        Product setOption = new Product(id, name, image);
+                        set.add(setOption);  // Fixed: Adding to set list, not catering
+
+                        // Close the input stream
+                        is.close();
+
+                        System.out.println("Loaded set product: " + name);
+                    }
+                }
+            }
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading set options: " + e.getMessage());
+        }
+
+        // If no set options were loaded, add some default options for testing
+        if (set.isEmpty()) {
+            System.out.println("No set options found in database. Adding default options.");
+            addDefaultSet();  // Need to create this method (see below)
+        }
+    }
+
+    private void addDefaultSet() {
+        try {
+            // Create a default image
+            InputStream is = getClass().getResourceAsStream("/images/default.png");
+            if (is == null) {
+                // If default image isn't found, create a blank image
+                Image blankImage = new Image(new ByteArrayInputStream(new byte[0]));
+                set.add(new Product(10, "Set 1", blankImage));
+                set.add(new Product(11, "Set 2", blankImage));
+                set.add(new Product(12, "Set 3", blankImage));
+            } else {
+                Image defaultImage = new Image(is);
+                set.add(new Product(10, "Classic Set", defaultImage));
+                set.add(new Product(11, "Modern Set", defaultImage));
+                set.add(new Product(12, "Rustic Set", defaultImage));
+                is.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

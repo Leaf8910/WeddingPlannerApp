@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Data Access Object for Planning entities
  */
-public class PlanningDAO {
+public class Planning2DAO {
     // Using the same database connection parameters as in the rest of the app
     private static final String DB_URL = "jdbc:mysql://localhost:3306/wedding_planner";
     private static final String DB_USER = "root";
@@ -20,24 +20,19 @@ public class PlanningDAO {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    /**
-     * Save planning details to the database
-     * @param planning The planning details to save
-     * @return true if successful, false otherwise
-     */
-    public static boolean savePlanning(Planning planning) {
-        String sql = "INSERT INTO planning (user_id, venue, hall, catering, set1, month, day) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    public static boolean savePlanning(Planning planning2) {
+        String sql = "INSERT INTO planning (decor, MUA, wed_vendor, photographer, dress) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            stmt.setInt(1, planning.getUserId());
-            stmt.setString(2, planning.getVenue());
-            stmt.setString(3, planning.getHall());
-            stmt.setString(4, planning.getCatering());
-            stmt.setString(5, planning.getSet());
-            stmt.setString(6, planning.getMonth());
-            stmt.setString(7, planning.getDay());
+            stmt.setString(1, planning2.getDecor());
+            stmt.setString(2, planning2.getMUA());
+            stmt.setString(3, planning2.getWed_vendor());
+            stmt.setString(4, planning2.getPhotographer());
+            stmt.setString(5, planning2.getDress());
+
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -45,7 +40,7 @@ public class PlanningDAO {
                 // Get the generated ID
                 ResultSet rs = stmt.getGeneratedKeys();
                 if (rs.next()) {
-                    planning.setId(rs.getInt(1));
+                    planning2.setId(rs.getInt(1));
                 }
                 return true;
             }
@@ -58,25 +53,19 @@ public class PlanningDAO {
         }
     }
 
-    /**
-     * Update existing planning details
-     * @param planning The planning details to update
-     * @return true if successful, false otherwise
-     */
-    public static boolean updatePlanning(Planning planning) {
-        String sql = "UPDATE planning SET venue = ?, hall = ?, catering = ?, set1 = ?, month = ?, day = ? WHERE id = ? AND user_id = ?";
+
+    public static boolean updatePlanning(Planning planning2) {
+        String sql = "UPDATE planning SET decor = ?, MUA = ?, wed_vendor = ?, photographer = ? " +
+                "AND dress = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, planning.getVenue());
-            stmt.setString(2, planning.getHall());
-            stmt.setString(3, planning.getCatering());
-            stmt.setString(4, planning.getSet());
-            stmt.setString(5, planning.getMonth());
-            stmt.setString(6, planning.getDay());
-            stmt.setInt(7, planning.getId());
-            stmt.setInt(8, planning.getUserId());
+            stmt.setString(1, planning2.getDecor());
+            stmt.setString(2, planning2.getMUA());
+            stmt.setString(3, planning2.getWed_vendor());
+            stmt.setString(4, planning2.getPhotographer());
+            stmt.setString(4, planning2.getDress());
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -102,23 +91,18 @@ public class PlanningDAO {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                Planning planning = new Planning();
-                planning.setId(rs.getInt("id"));
-                planning.setUserId(rs.getInt("user_id"));
-                planning.setVenue(rs.getString("venue"));
-                planning.setHall(rs.getString("hall"));
-                planning.setCatering(rs.getString("catering"));
-                planning.setSet(rs.getString("set1"));
-                planning.setMonth(rs.getString("month"));
-                planning.setDay(rs.getString("day"));
+                Planning planning2 = new Planning();
+//                planning2.setId(rs.getInt("id"));
+//                planning2.setUserId(rs.getInt("user_id"));
+                planning2.setDecor(rs.getString("decor"));
+                planning2.setMUA(rs.getString("MUA"));
+                planning2.setWed_vendor(rs.getString("wed_vendor"));
+                planning2.setPhotographer(rs.getString("photographer"));
+                planning2.setDress(rs.getString("dress"));
+//                planning2.setMonth(rs.getString("month"));
+//                planning2.setDay(rs.getString("day"));
 
-                // Set default values for the missing fields
-                planning.setDecor("Not specified");
-                planning.setMUA("Not specified");
-                planning.setWed_vendor("Not specified");
-                planning.setPhotographer("Not specified");
-
-                return planning;
+                return planning2;
             }
 
             return null;
@@ -175,13 +159,9 @@ public class PlanningDAO {
                 planning.setVenue(rs.getString("venue"));
                 planning.setHall(rs.getString("hall"));
                 planning.setCatering(rs.getString("catering"));
-                planning.setSet(rs.getString("set1"));
+                planning.setSet(rs.getString("set"));
                 planning.setMonth(rs.getString("month"));
                 planning.setDay(rs.getString("day"));
-                planning.setDecor(rs.getString("decor"));
-                planning.setMUA(rs.getString("MUA"));
-                planning.setWed_vendor(rs.getString("wed_vendor"));
-                planning.setPhotographer(rs.getString("photographer"));
 
                 planningList.add(planning);
             }
