@@ -69,6 +69,13 @@ public class MainController implements Initializable {
     @FXML
     private Label errorMessageLabel;
 
+    @FXML private Label venueDescription;
+
+    @FXML private Button saveToHistoryButton;
+    @FXML private Button closeButton;
+    @FXML
+    private Button historyButton;
+
     private final ObservableList<Product> products = FXCollections.observableArrayList();
     private final ObservableList<Product> halls = FXCollections.observableArrayList();
     private final ObservableList<Product> catering = FXCollections.observableArrayList();
@@ -128,6 +135,9 @@ public class MainController implements Initializable {
                 selectedImageView.setFitWidth(200);
                 selectedImageView.setFitHeight(200);
                 selectedImageView.setPreserveRatio(true);
+
+                // Set the description
+                venueDescription.setText(newValue.getDescription());
             }
         });
 
@@ -433,12 +443,13 @@ public class MainController implements Initializable {
             try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
                  Statement stmt = conn.createStatement()) {
 
-                String query = "SELECT id, name, image_path FROM products WHERE type = 'venue' OR type IS NULL";
+                String query = "SELECT id, name, image_path, description FROM products WHERE type = 'venue' OR type IS NULL";
                 try (ResultSet rs = stmt.executeQuery(query)) {
                     while (rs.next()) {
                         int id = rs.getInt("id");
                         String name = rs.getString("name");
                         String imagePath = rs.getString("image_path");
+                        String description = rs.getString("description");
 
                         // Get input stream for image
                         InputStream is = getClass().getResourceAsStream(imagePath);
@@ -454,7 +465,7 @@ public class MainController implements Initializable {
 
                         // Create image and product objects
                         Image image = new Image(is);
-                        Product product = new Product(id, name, image);
+                        Product product = new Product(id, name, image, description);
                         products.add(product);
 
                         // Close the input stream
@@ -754,6 +765,27 @@ public class MainController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Error loading itinerary view: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void navigateToHistory(ActionEvent event) {
+        try {
+            // Load the History FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/history.fxml"));
+            Parent historyRoot = loader.load();
+
+            // Get the current stage
+            Stage stage = (Stage) historyButton.getScene().getWindow();
+
+            // Replace the current scene
+            Scene historyScene = new Scene(historyRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
+            stage.setScene(historyScene);
+            stage.setTitle("Wedding Planning - History");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Navigation Error", "Could not navigate to history page: " + e.getMessage());
         }
     }
 
