@@ -1,7 +1,5 @@
 package com;
 
-import com.Product;
-import com.PlanningNavigationHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -11,16 +9,12 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.sql.*;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -71,15 +65,40 @@ public class MainController implements Initializable {
 
     @FXML private Label venueDescription;
 
-    @FXML private Button saveToHistoryButton;
-    @FXML private Button closeButton;
+    @FXML private Label totalPriceLabel;
+
+    @FXML private Label venuePriceLabel;
+
+
+    @FXML private Label hallDescription;
+    @FXML private Label hallPriceLabel;
+
+    @FXML private Label cateringDescription;
+    @FXML private Label cateringPriceLabel;
+
+    @FXML private Label setDescription;
+    @FXML private Label setPriceLabel;
+
+    // Add a new label to show the per-pax calculation
+    @FXML private Label setPaxCalculationLabel;
+
+    private double totalPrice = 0.0;
+    private double venuePrice = 0.0;
+    private double hallPrice = 0.0;
+    private double cateringPrice = 0.0;
+    private double setPrice = 0.0;
+    private double setPaxPrice = 0.0; // New field for set * pax calculation
     @FXML
     private Button historyButton;
+    @FXML private Button logoutButton;
 
-    private final ObservableList<Product> products = FXCollections.observableArrayList();
-    private final ObservableList<Product> halls = FXCollections.observableArrayList();
-    private final ObservableList<Product> catering = FXCollections.observableArrayList();
-    private final ObservableList<Product> set = FXCollections.observableArrayList();
+    // Variable to store attendants count from wedding details
+    private int attendantsCount = 0;
+
+    private ObservableList<Product> products = FXCollections.observableArrayList();
+    private ObservableList<Product> halls = FXCollections.observableArrayList();
+    private ObservableList<Product> catering = FXCollections.observableArrayList();
+    private ObservableList<Product> set = FXCollections.observableArrayList();
     private final ObservableList<String> months = FXCollections.observableArrayList(
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
@@ -90,28 +109,22 @@ public class MainController implements Initializable {
             "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"
     );
 
-    // MySQL database connection parameters
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/product_db";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/wedding_planner";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Alif8611891";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Load data from database
-        loadProductsFromDatabase();
-        loadHallsFromDatabase();
-        loadCateringFromDatabase();
-        loadSetFromDatabase();
 
-        // Set up product combo box
+        loadAttendantsCount();
+        products = FXCollections.observableArrayList(DatabaseUtil.loadProductsFromDatabase("venue"));
+        halls = FXCollections.observableArrayList(DatabaseUtil.loadHallsFromDatabase("halls"));
+        catering = FXCollections.observableArrayList(DatabaseUtil.loadCateringFromDatabase("catering"));
+        set = FXCollections.observableArrayList(DatabaseUtil.loadSetFromDatabase("set"));
+
         setupComboBox(productComboBox, products);
-
-        // Set up hall combo box
         setupComboBox(hallComboBox, halls);
-
-        // Set up catering combo box
         setupComboBox(cateringComboBox, catering);
-
         setupComboBox(setComboBox, catering);
 
         if (setComboBox != null) {
@@ -136,34 +149,47 @@ public class MainController implements Initializable {
                 selectedImageView.setFitHeight(200);
                 selectedImageView.setPreserveRatio(true);
 
-                // Set the description
-                venueDescription.setText(newValue.getDescription());
+                if (venueDescription != null) {
+                    venueDescription.setText(newValue.getDescription());
+                }
+
+                venuePrice = newValue.getPrice();
+                venuePriceLabel.setText(String.format("$%.2f", venuePrice));
+                updateTotalPrice();
             }
         });
 
-        // Add listener for hall selection change
         hallComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 selectedImageView1.setImage(newValue.getImage());
-                // Adjust the image size as needed
                 selectedImageView1.setFitWidth(200);
                 selectedImageView1.setFitHeight(200);
                 selectedImageView1.setPreserveRatio(true);
+
+                if (hallDescription != null) {
+                    hallDescription.setText(newValue.getDescription());
+                }
+                hallPrice = newValue.getPrice();
+                hallPriceLabel.setText(String.format("$%.2f", hallPrice));
+                updateTotalPrice();
             }
         });
-
-        // Add listener for catering selection change
         cateringComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 selectedImageView2.setImage(newValue.getImage());
-                // Adjust the image size as needed
                 selectedImageView2.setFitWidth(200);
                 selectedImageView2.setFitHeight(200);
                 selectedImageView2.setPreserveRatio(true);
+
+                if (cateringDescription != null) {
+                    cateringDescription.setText(newValue.getDescription());
+                }
+                cateringPrice = newValue.getPrice();
+                cateringPriceLabel.setText(String.format("$%.2f", cateringPrice));
+                updateTotalPrice();
             }
         });
 
-        // Add listener for catering selection change
         setComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 selectedImageView3.setImage(newValue.getImage());
@@ -171,6 +197,14 @@ public class MainController implements Initializable {
                 selectedImageView3.setFitWidth(200);
                 selectedImageView3.setFitHeight(200);
                 selectedImageView3.setPreserveRatio(true);
+
+                if (setDescription != null) {
+                    setDescription.setText(newValue.getDescription());
+                }
+                setPrice = newValue.getPrice();
+                setPriceLabel.setText(String.format("$%.2f", setPrice));
+                calculateSetPaxPrice();
+                updateTotalPrice();
             }
         });
 
@@ -187,15 +221,55 @@ public class MainController implements Initializable {
             cateringComboBox.getSelectionModel().selectFirst();
         }
 
-
+        if (!set.isEmpty()) {
+            setComboBox.getSelectionModel().selectFirst();
+        }
 
         // Set up confirm button handler
         if (confirmButton != null) {
             confirmButton.setOnAction(this::handleConfirm);
         }
-
-        // Load existing planning data if available
         loadExistingPlanningData();
+    }
+
+    private void loadAttendantsCount() {
+        User currentUser = SessionManager.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        WeddingDetails weddingDetails = WeddingDetailsDAO.getWeddingDetailsByUserId(currentUser.getId());
+
+        if (weddingDetails != null) {
+            attendantsCount = weddingDetails.getAttendantsCount();
+            System.out.println("Loaded attendants count: " + attendantsCount);
+
+            // If a set is already selected, recalculate its price
+            if (setComboBox != null && setComboBox.getSelectionModel().getSelectedItem() != null) {
+                calculateSetPaxPrice();
+            }
+        }
+    }
+
+    /**
+     * Calculate the set price based on pax count
+     */
+    private void calculateSetPaxPrice() {
+        if (attendantsCount > 0) {
+            // Calculate set price per person
+            setPaxPrice = setPrice * attendantsCount;
+            if (setPaxCalculationLabel != null) {
+                setPaxCalculationLabel.setText(String.format("Set × %d pax = $%.2f",
+                        attendantsCount, setPaxPrice));
+            }
+            System.out.println("Set price per person calculation: " + setPrice + " × " +
+                    attendantsCount + " = " + setPaxPrice);
+        } else {
+            // No pax information, use the base price
+            setPaxPrice = setPrice;
+
+            if (setPaxCalculationLabel != null) {
+                setPaxCalculationLabel.setText("No pax information available");
+            }
+        }
     }
 
     private void loadExistingPlanningData() {
@@ -204,7 +278,6 @@ public class MainController implements Initializable {
 
         Planning existingPlanning = PlanningDAO.getPlanningByUserId(currentUser.getId());
         if (existingPlanning != null) {
-            // Try to match the venue, hall, and catering to the combobox items
             for (Product product : products) {
                 if (product.getName().equals(existingPlanning.getVenue())) {
                     productComboBox.getSelectionModel().select(product);
@@ -248,27 +321,18 @@ public class MainController implements Initializable {
     @FXML
     public void navigateToChecklist() {
         try {
-            // Load the Checklist FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/checklist.fxml"));
             Parent checklistRoot = loader.load();
-
-            // Get the current stage
             Stage stage;
             if (checklistButton != null) {
                 stage = (Stage) checklistButton.getScene().getWindow();
             } else {
-                // We're using the menu approach
                 MenuItem checklistMenuItem = null;
                 stage = (Stage) checklistMenuItem.getParentPopup().getOwnerWindow();
             }
-
-            // Replace the current scene with the checklist scene
             Scene checklistScene = new Scene(checklistRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
             stage.setScene(checklistScene);
             stage.setTitle("Wedding Planning - Checklist");
-
-            // No need to call stage.show() as it's already showing
-
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Error loading checklist view: " + e.getMessage());
@@ -277,13 +341,11 @@ public class MainController implements Initializable {
 
     @FXML
     public void navigateToPlanning(ActionEvent event) {
-        // Use the common navigation handler
         PlanningNavigationHandler.navigateToPlanning(event);
     }
 
     @FXML
-    public void handleConfirm(ActionEvent event) {
-        // Validate that all selections have been made
+    private void handleConfirm(ActionEvent event) {
         if (productComboBox.getSelectionModel().isEmpty() ||
                 hallComboBox.getSelectionModel().isEmpty() ||
                 cateringComboBox.getSelectionModel().isEmpty() ||
@@ -300,7 +362,6 @@ public class MainController implements Initializable {
             return;
         }
 
-        // Get the current user
         User currentUser = SessionManager.getInstance().getCurrentUser();
         if (currentUser == null) {
             showAlert(Alert.AlertType.ERROR, "Authentication Error",
@@ -308,59 +369,82 @@ public class MainController implements Initializable {
             return;
         }
 
-        // Get selected items
-        // Correct data type handling
         String venue = productComboBox.getSelectionModel().getSelectedItem().getName();
         String hall = hallComboBox.getSelectionModel().getSelectedItem().getName();
         String cateringChoice = cateringComboBox.getSelectionModel().getSelectedItem().getName();
-        String setChoice = setComboBox.getSelectionModel().getSelectedItem().getName(); // Fixed variable name
+        String setChoice = setComboBox.getSelectionModel().getSelectedItem().getName();
         String month = monthComboBox != null ? monthComboBox.getValue() : "";
         String day = dayComboBox != null ? dayComboBox.getValue() : "";
 
-        String decor = hallComboBox.getSelectionModel().getSelectedItem().getName();
-        String MUA = hallComboBox.getSelectionModel().getSelectedItem().getName();
-        String wed_vendor = hallComboBox.getSelectionModel().getSelectedItem().getName();
-        String photographer = hallComboBox.getSelectionModel().getSelectedItem().getName();
-        String dress = hallComboBox.getSelectionModel().getSelectedItem().getName();
+        String decor = "";
+        String MUA = "";
+        String wed_vendor = "";
+        String photographer = "";
+        String dress = "";
 
-        // Create planning object
-        Planning planning = new Planning(
-                currentUser.getId(),
-                venue,
-                hall,
-                cateringChoice,
-                setChoice,
-                month,
-                day,
-                decor,
-                MUA,
-                wed_vendor,
-                photographer,
-                dress
-        );
+        Planning existingPlanning = PlanningDAO.getPlanningByUserId(currentUser.getId());
+        Planning planning;
 
-        // Save to database
-        boolean success = PlanningDAO.savePlanning(planning);
-
-        if (success) {
-            // Navigate to planning2.fxml
-            navigateToPlanning2();
+        if (existingPlanning != null) {
+            planning = existingPlanning;
+            planning.setVenue(venue);
+            planning.setHall(hall);
+            planning.setCatering(cateringChoice);
+            planning.setSet(setChoice);
+            planning.setMonth(month);
+            planning.setDay(day);
         } else {
-            showAlert(Alert.AlertType.ERROR, "Save Error",
-                    "Failed to save planning details. Please try again.");
+            planning = new Planning(
+                    currentUser.getId(),
+                    venue,
+                    hall,
+                    cateringChoice,
+                    setChoice,
+                    month,
+                    day,
+                    decor,
+                    MUA,
+                    wed_vendor,
+                    photographer,
+                    dress
+            );
         }
+
+        planning.setVenuePrice(venuePrice);
+        planning.setHallPrice(hallPrice);
+        planning.setCateringPrice(cateringPrice);
+        planning.setSetPrice(setPrice);
+        planning.setSetPaxPrice(setPaxPrice);
+
+        // Add set_pax_price to the total
+        double calculatedTotal = venuePrice + hallPrice + cateringPrice + setPaxPrice;
+        planning.setTotalPrice(calculatedTotal);
+
+        // Other prices will be set in planning2 and planning3
+        planning.setDecorPrice(0.0);
+        planning.setMuaPrice(0.0);
+        planning.setVendorPrice(0.0);
+        planning.setPhotographerPrice(0.0);
+        planning.setDressPrice(0.0);
+        SessionManager.getInstance().setAttribute("currentPlanning", planning);
+
+        // Debug output to verify prices
+        System.out.println("Storing planning with prices:");
+        System.out.println("  Venue: " + venue + " - $" + venuePrice);
+        System.out.println("  Hall: " + hall + " - $" + hallPrice);
+        System.out.println("  Catering: " + cateringChoice + " - $" + cateringPrice);
+        System.out.println("  Set: " + setChoice + " - $" + setPrice);
+        System.out.println("  Set × Pax (" + attendantsCount + "): $" + setPaxPrice);
+        System.out.println("  Total: $" + calculatedTotal);
+        navigateToPlanning2();
     }
 
     private void navigateToPlanning2() {
         try {
-            // Load the Planning2 FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/planning2.fxml"));
             Parent planning2Root = loader.load();
 
-            // Get the current stage
             Stage stage = (Stage) confirmButton.getScene().getWindow();
-
-            // Replace the current scene with the planning2 scene
             Scene planning2Scene = new Scene(planning2Root, stage.getScene().getWidth(), stage.getScene().getHeight());
             stage.setScene(planning2Scene);
             stage.setTitle("Wedding Planning - Planning Details");
@@ -373,7 +457,7 @@ public class MainController implements Initializable {
     }
 
     private void setupComboBox(ComboBox<Product> comboBox, ObservableList<Product> items) {
-        // Set custom cell factory for ComboBox
+
         comboBox.setCellFactory(new Callback<ListView<Product>, ListCell<Product>>() {
             @Override
             public ListCell<Product> call(ListView<Product> param) {
@@ -388,7 +472,7 @@ public class MainController implements Initializable {
                             setText(null);
                             setGraphic(null);
                         } else {
-                            setText(product.getName());
+                            setText(product.getName() + " - $" + String.format("%.2f", product.getPrice()));
                             imageView.setImage(product.getImage());
                             imageView.setFitHeight(90);
                             imageView.setFitWidth(90);
@@ -399,7 +483,6 @@ public class MainController implements Initializable {
                 };
             }
         });
-
         // Set button cell (what's shown when the combobox is closed)
         comboBox.setButtonCell(new ListCell<Product>() {
             private final ImageView imageView = new ImageView();
@@ -412,7 +495,8 @@ public class MainController implements Initializable {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    setText(product.getName());
+                    // Show name and price in the selected value
+                    setText(product.getName() + " - $" + String.format("%.2f", product.getPrice()));
                     imageView.setImage(product.getImage());
                     imageView.setFitHeight(24);
                     imageView.setFitWidth(24);
@@ -421,311 +505,25 @@ public class MainController implements Initializable {
                 }
             }
         });
-
-        // Set items to ComboBox
         comboBox.setItems(items);
     }
 
-    private void loadProductsFromDatabase() {
-        products.clear();
+    private void updateTotalPrice() {
+        // Calculate total using setPaxPrice instead of setPrice
+        totalPrice = venuePrice + hallPrice + cateringPrice + setPaxPrice;
 
-        try {
-            // Load MySQL JDBC driver if not already loaded
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-            } catch (ClassNotFoundException e) {
-                System.err.println("MySQL JDBC Driver not found.");
-                e.printStackTrace();
-                return;
-            }
-
-            // Connect to database
-            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                 Statement stmt = conn.createStatement()) {
-
-                String query = "SELECT id, name, image_path, description FROM products WHERE type = 'venue' OR type IS NULL";
-                try (ResultSet rs = stmt.executeQuery(query)) {
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String name = rs.getString("name");
-                        String imagePath = rs.getString("image_path");
-                        String description = rs.getString("description");
-
-                        // Get input stream for image
-                        InputStream is = getClass().getResourceAsStream(imagePath);
-                        if (is == null) {
-                            System.err.println("Cannot find image: " + imagePath);
-                            // Try with a different path structure
-                            is = getClass().getResourceAsStream("/images/default.png");
-                            if (is == null) {
-                                System.err.println("Cannot find default image either!");
-                                continue; // Skip this product
-                            }
-                        }
-
-                        // Create image and product objects
-                        Image image = new Image(is);
-                        Product product = new Product(id, name, image, description);
-                        products.add(product);
-
-                        // Close the input stream
-                        is.close();
-
-                        System.out.println("Loaded venue product: " + name);
-                    }
-                }
-            }
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.err.println("Error loading products: " + e.getMessage());
+        // Update the total price display
+        if (totalPriceLabel != null) {
+            totalPriceLabel.setText(String.format("$%.2f", totalPrice));
         }
 
-        // If no products were loaded, add some default products for testing
-        if (products.isEmpty()) {
-            System.out.println("No products found in database. Adding default products.");
-            addDefaultProducts();
-        }
-    }
-
-    private void loadHallsFromDatabase() {
-        halls.clear();
-
-        try {
-            // Connect to database
-            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                 Statement stmt = conn.createStatement()) {
-
-                String query = "SELECT id, name, image_path FROM products WHERE type = 'hall'";
-                try (ResultSet rs = stmt.executeQuery(query)) {
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String name = rs.getString("name");
-                        String imagePath = rs.getString("image_path");
-
-                        // Get input stream for image
-                        InputStream is = getClass().getResourceAsStream(imagePath);
-                        if (is == null) {
-                            System.err.println("Cannot find image: " + imagePath);
-                            is = getClass().getResourceAsStream("/images/default.png");
-                            if (is == null) {
-                                System.err.println("Cannot find default image either!");
-                                continue; // Skip this hall
-                            }
-                        }
-
-                        // Create image and product objects
-                        Image image = new Image(is);
-                        Product hall = new Product(id, name, image);
-                        halls.add(hall);
-
-                        // Close the input stream
-                        is.close();
-
-                        System.out.println("Loaded hall product: " + name);
-                    }
-                }
-            }
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.err.println("Error loading halls: " + e.getMessage());
-        }
-
-        // If no halls were loaded, add some default halls for testing
-        if (halls.isEmpty()) {
-            System.out.println("No halls found in database. Adding default halls.");
-            addDefaultHalls();
-        }
-    }
-
-    private void loadCateringFromDatabase() {
-        catering.clear();
-
-        try {
-            // Connect to database
-            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                 Statement stmt = conn.createStatement()) {
-
-                String query = "SELECT id, name, image_path FROM products WHERE type = 'catering'";
-                try (ResultSet rs = stmt.executeQuery(query)) {
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String name = rs.getString("name");
-                        String imagePath = rs.getString("image_path");
-
-                        // Get input stream for image
-                        InputStream is = getClass().getResourceAsStream(imagePath);
-                        if (is == null) {
-                            System.err.println("Cannot find image: " + imagePath);
-                            is = getClass().getResourceAsStream("/images/default.png");
-                            if (is == null) {
-                                System.err.println("Cannot find default image either!");
-                                continue; // Skip this catering option
-                            }
-                        }
-
-                        // Create image and product objects
-                        Image image = new Image(is);
-                        Product cateringOption = new Product(id, name, image);
-                        catering.add(cateringOption);
-
-                        // Close the input stream
-                        is.close();
-
-                        System.out.println("Loaded catering product: " + name);
-                    }
-                }
-            }
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.err.println("Error loading catering options: " + e.getMessage());
-        }
-
-        // If no catering options were loaded, add some default options for testing
-        if (catering.isEmpty()) {
-            System.out.println("No catering options found in database. Adding default options.");
-            addDefaultCatering();
-        }
-    }
-
-    private void loadSetFromDatabase() {
-        set.clear();
-
-        try {
-            // Connect to database
-            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                 Statement stmt = conn.createStatement()) {
-
-                String query = "SELECT id, name, image_path FROM products WHERE type = 'set'";
-                try (ResultSet rs = stmt.executeQuery(query)) {
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String name = rs.getString("name");
-                        String imagePath = rs.getString("image_path");
-
-                        // Get input stream for image
-                        InputStream is = getClass().getResourceAsStream(imagePath);
-                        if (is == null) {
-                            System.err.println("Cannot find image: " + imagePath);
-                            is = getClass().getResourceAsStream("/images/default.png");
-                            if (is == null) {
-                                System.err.println("Cannot find default image either!");
-                                continue; // Skip this set option
-                            }
-                        }
-
-                        // Create image and product objects
-                        Image image = new Image(is);
-                        Product setOption = new Product(id, name, image);
-                        set.add(setOption);  // Fixed: Adding to set list, not catering
-
-                        // Close the input stream
-                        is.close();
-
-                        System.out.println("Loaded set product: " + name);
-                    }
-                }
-            }
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.err.println("Error loading set options: " + e.getMessage());
-        }
-
-        // If no set options were loaded, add some default options for testing
-        if (set.isEmpty()) {
-            System.out.println("No set options found in database. Adding default options.");
-            addDefaultSet();  // Need to create this method (see below)
-        }
-    }
-
-    private void addDefaultSet() {
-        try {
-            // Create a default image
-            InputStream is = getClass().getResourceAsStream("/images/default.png");
-            if (is == null) {
-                // If default image isn't found, create a blank image
-                Image blankImage = new Image(new ByteArrayInputStream(new byte[0]));
-                set.add(new Product(10, "Set 1", blankImage));
-                set.add(new Product(11, "Set 2", blankImage));
-                set.add(new Product(12, "Set 3", blankImage));
-            } else {
-                Image defaultImage = new Image(is);
-                set.add(new Product(10, "Classic Set", defaultImage));
-                set.add(new Product(11, "Modern Set", defaultImage));
-                set.add(new Product(12, "Rustic Set", defaultImage));
-                is.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Helper method to add default products if database is empty
-    private void addDefaultProducts() {
-        try {
-            // Create a default image
-            InputStream is = getClass().getResourceAsStream("/images/default.png");
-            if (is == null) {
-                // If default image isn't found, create a blank image
-                Image blankImage = new Image(new ByteArrayInputStream(new byte[0]));
-                products.add(new Product(1, "Venue 1", blankImage));
-                products.add(new Product(2, "Venue 2", blankImage));
-                products.add(new Product(3, "Venue 3", blankImage));
-            } else {
-                Image defaultImage = new Image(is);
-                products.add(new Product(1, "Empire Hotel", defaultImage));
-                products.add(new Product(2, "Serikandi Hall", defaultImage));
-                products.add(new Product(3, "Peak View Resort", defaultImage));
-                is.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Helper method to add default halls if database is empty
-    private void addDefaultHalls() {
-        try {
-            // Create a default image
-            InputStream is = getClass().getResourceAsStream("/images/default.png");
-            if (is == null) {
-                // If default image isn't found, create a blank image
-                Image blankImage = new Image(new ByteArrayInputStream(new byte[0]));
-                halls.add(new Product(4, "Hall 1", blankImage));
-                halls.add(new Product(5, "Hall 2", blankImage));
-                halls.add(new Product(6, "Hall 3", blankImage));
-            } else {
-                Image defaultImage = new Image(is);
-                halls.add(new Product(4, "Diamond Hall", defaultImage));
-                halls.add(new Product(5, "Grand Ballroom", defaultImage));
-                halls.add(new Product(6, "Garden Pavilion", defaultImage));
-                is.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Helper method to add default catering options if database is empty
-    private void addDefaultCatering() {
-        try {
-            // Create a default image
-            InputStream is = getClass().getResourceAsStream("/images/default.png");
-            if (is == null) {
-                // If default image isn't found, create a blank image
-                Image blankImage = new Image(new ByteArrayInputStream(new byte[0]));
-                catering.add(new Product(7, "Catering 1", blankImage));
-                catering.add(new Product(8, "Catering 2", blankImage));
-                catering.add(new Product(9, "Catering 3", blankImage));
-            } else {
-                Image defaultImage = new Image(is);
-                catering.add(new Product(7, "Luxury Catering", defaultImage));
-                catering.add(new Product(8, "Traditional Catering", defaultImage));
-                catering.add(new Product(9, "International Cuisine", defaultImage));
-                is.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // For debugging
+        System.out.println("Total price updated: $" + String.format("%.2f", totalPrice));
+        System.out.println("  Venue: $" + String.format("%.2f", venuePrice));
+        System.out.println("  Hall: $" + String.format("%.2f", hallPrice));
+        System.out.println("  Catering: $" + String.format("%.2f", cateringPrice));
+        System.out.println("  Set: $" + String.format("%.2f", setPrice));
+        System.out.println("  Set × Pax (" + attendantsCount + "): $" + String.format("%.2f", setPaxPrice));
     }
 
     public void navigateToHome(ActionEvent actionEvent) {
@@ -771,13 +569,10 @@ public class MainController implements Initializable {
     @FXML
     private void navigateToHistory(ActionEvent event) {
         try {
-            // Load the History FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/history.fxml"));
             Parent historyRoot = loader.load();
-
             // Get the current stage
             Stage stage = (Stage) historyButton.getScene().getWindow();
-
             // Replace the current scene
             Scene historyScene = new Scene(historyRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
             stage.setScene(historyScene);
@@ -795,5 +590,21 @@ public class MainController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public void logout() {
+        SessionManager.getInstance().logout();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/login.fxml"));
+            Parent loginRoot = loader.load();
+            Stage stage = (Stage) logoutButton.getScene().getWindow();
+            Scene loginScene = new Scene(loginRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
+            stage.setScene(loginScene);
+            stage.setTitle("Wedding Planner - Login");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading login view: " + e.getMessage());
+        }
     }
 }
