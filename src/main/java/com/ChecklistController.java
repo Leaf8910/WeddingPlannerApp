@@ -51,23 +51,22 @@ public class ChecklistController implements Initializable {
     @FXML
     private Button planninglistButton;
 
+    @FXML private Button logoutButton;
+    private Button historyButton;
+
     private ObservableList<ChecklistItem> checklistItems = FXCollections.observableArrayList();
     private boolean isEditMode = false;
 
-    // Database connection parameters
     private static final String DB_URL = "jdbc:mysql://localhost:3306/product_db";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Alif8611891";
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Load checklist items from database
         loadChecklistItems();
 
-        // Display checklist items
         displayChecklistItems();
 
-        // Set up button handlers
         setupButtonHandlers();
     }
 
@@ -137,7 +136,6 @@ public class ChecklistController implements Initializable {
             addChecklistItemToDatabase(item);
         }
 
-        // Reload items from database
         loadChecklistItems();
     }
 
@@ -146,7 +144,6 @@ public class ChecklistController implements Initializable {
 
         for (ChecklistItem item : checklistItems) {
             if (isEditMode) {
-                // In edit mode, show text field and delete button
                 HBox itemContainer = new HBox(10);
                 itemContainer.setPadding(new Insets(5));
 
@@ -160,7 +157,7 @@ public class ChecklistController implements Initializable {
                     displayChecklistItems();
                 });
 
-                // Update button to save changes
+
                 Button updateButton = new Button("Update");
                 updateButton.setOnAction(e -> {
                     updateChecklistItem(item.getId(), itemTextField.getText());
@@ -170,7 +167,6 @@ public class ChecklistController implements Initializable {
                 itemContainer.getChildren().addAll(itemTextField, updateButton, deleteButton);
                 checklistVBox.getChildren().add(itemContainer);
             } else {
-                // In normal mode, show checkbox
                 CheckBox checkBox = new CheckBox(item.getDescription());
                 checkBox.setSelected(item.isCompleted());
                 checkBox.setOnAction(e -> {
@@ -181,7 +177,6 @@ public class ChecklistController implements Initializable {
             }
         }
 
-        // In edit mode, add a "Add New Item" section
         if (isEditMode) {
             HBox addNewItemContainer = new HBox(10);
             addNewItemContainer.setPadding(new Insets(5));
@@ -200,7 +195,6 @@ public class ChecklistController implements Initializable {
                     displayChecklistItems();
                 }
             });
-
             addNewItemContainer.getChildren().addAll(newItemTextField, addNewButton);
             checklistVBox.getChildren().add(addNewItemContainer);
         }
@@ -229,7 +223,6 @@ public class ChecklistController implements Initializable {
 
             System.out.println("Checklist saved successfully!");
 
-            // If we were in edit mode, exit it
             if (isEditMode) {
                 isEditMode = false;
                 editButton.setText("Edit");
@@ -298,35 +291,37 @@ public class ChecklistController implements Initializable {
 
     @FXML
     public void navigateToPlanning(ActionEvent event) {
-        // Use the common navigation handler
         PlanningNavigationHandler.navigateToPlanning(event);
     }
 
     public void navigateToHome(ActionEvent actionEvent) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/homepage.fxml"));
+            Parent homeRoot = loader.load();
+            Stage stage = (Stage) checklistButton.getScene().getWindow();
+            Scene homeScene = new Scene(homeRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
+            stage.setScene(homeScene);
+            stage.setTitle("Wedding Planning - Home");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading home view: " + e.getMessage());
+        }
     }
 
     public void navigateToChecklist(ActionEvent actionEvent) {
         try {
-            // Load the Checklist FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/checklist.fxml"));
             Parent checklistRoot = loader.load();
-
-            // Get the current stage
             Stage stage;
             if (checklistButton != null) {
                 stage = (Stage) checklistButton.getScene().getWindow();
             } else {
-                // We're using the menu approach
                 MenuItem checklistMenuItem = null;
                 stage = (Stage) checklistMenuItem.getParentPopup().getOwnerWindow();
             }
-
-            // Replace the current scene with the checklist scene
             Scene checklistScene = new Scene(checklistRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
             stage.setScene(checklistScene);
             stage.setTitle("Wedding Planning - Checklist");
-
-            // No need to call stage.show() as it's already showing
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -336,34 +331,24 @@ public class ChecklistController implements Initializable {
 
     public void navigateToItinerary(ActionEvent actionEvent) {
         try {
-            // Load the Checklist FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/itinerary.fxml"));
             Parent checklistRoot = loader.load();
-
-            // Get the current stage
             Stage stage;
             if (checklistButton != null) {
                 stage = (Stage) checklistButton.getScene().getWindow();
             } else {
-                // We're using the menu approach
                 MenuItem checklistMenuItem = null;
                 stage = (Stage) checklistMenuItem.getParentPopup().getOwnerWindow();
             }
-
-            // Replace the current scene with the checklist scene
             Scene checklistScene = new Scene(checklistRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
             stage.setScene(checklistScene);
             stage.setTitle("Wedding Planning - Checklist");
-
-            // No need to call stage.show() as it's already showing
 
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Error loading checklist view: " + e.getMessage());
         }
     }
-
-    // Helper class to represent a checklist item
     public static class ChecklistItem {
         private int id;
         private String description;
@@ -394,5 +379,43 @@ public class ChecklistController implements Initializable {
         public void setCompleted(boolean completed) {
             this.completed = completed;
         }
+    }
+
+    public void logout() {
+        SessionManager.getInstance().logout();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/login.fxml"));
+            Parent loginRoot = loader.load();
+            Stage stage = (Stage) logoutButton.getScene().getWindow();
+            Scene loginScene = new Scene(loginRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
+            stage.setScene(loginScene);
+            stage.setTitle("Wedding Planner - Login");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading login view: " + e.getMessage());
+        }
+    }
+    @FXML
+    private void navigateToHistory(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/history.fxml"));
+            Parent historyRoot = loader.load();
+            Stage stage = (Stage) historyButton.getScene().getWindow();
+            Scene historyScene = new Scene(historyRoot, stage.getScene().getWidth(), stage.getScene().getHeight());
+            stage.setScene(historyScene);
+            stage.setTitle("Wedding Planning - History");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Navigation Error", "Could not navigate to history page: " + e.getMessage());
+        }
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
